@@ -1,7 +1,8 @@
 const express = require("express");
 const logger = require("morgan");
 const mongoose = require("mongoose");
-const Recipe = require( "./models/Recipe.model.js");
+//import the model
+const RecipeModel = require( "./models/Recipe.model.js");
 
 const app = express();
 
@@ -31,21 +32,10 @@ app.get('/', (req, res) => {
 //  Iteration 3 - Create a Recipe route
 //  POST  /recipes route
 app.post("/recipes", async (req, res) => {
+    console.log("the post route");
     try {
-        const { title, instructions, level, ingredients, image, duration, isArchived, created } = req.body
-
-        const create = await Recipe.create({ 
-            title,
-            instructions,
-            level,
-            ingredients,
-            image,
-            duration,
-            isArchived,
-            created,
-        })
-
-        return res.status(201).json({ msg: "Recipe created successfully", create});
+        const newRecipe = await RecipeModel.create(req.body)
+        return res.status(201).json({ msg: "Recipe created successfully", newRecipe});
     } catch (error) {
         console.log(error)
         return res.status(500).json("Failed to create a new recipe");
@@ -56,8 +46,8 @@ app.post("/recipes", async (req, res) => {
 //  GET  /recipes route
 app.get("/recipes", async (req, res) => {
     try {
-        const recipes = await Recipe.find();
-        res.json(recipes);
+        const allRecipes = await RecipeModel.find();
+        res.json(allRecipes);
     } catch (error) {
         res.status(500).json({ msg: "Failed to get recipes", error});
     }    
@@ -66,37 +56,29 @@ app.get("/recipes", async (req, res) => {
 
 //  Iteration 5 - Get a Single Recipe
 //  GET  /recipes/:id route
-app.get("/recipes/:id", async (req, res) => {
+app.get("/recipes/:recipeId", async (req, res) => {
     try {
-        const { id } = req.params;
-        const recipe = await Recipe.findById(id);
+        console.log('the params', req.params)
+        const oneRecipe = await RecipeModel.findById(req.params.recipeId);
 
         if (!recipe) return res.status(404).json({ msg: "Recipe not found" });
-        res.json(recipe);
+        res.status(200).json(oneRecipe);
   } catch (error) {
+        console.log(error)
         res.status(500).json({ msg: "Failed to get recipe", error});
     }    
 });
 
 //  Iteration 6 - Update a Single Recipe
 //  PUT  /recipes/:id route
-app.put("/recipes/:id", async (req, res) => {
+app.put("/recipes/:recipeId", async (req, res) => {
     try {
-        const { id } = req.params;
-        const { title, instructions, level, ingredients, image, duration, isArchived, created } = req.body;
-
-        const updated = await Recipe.findByIdAndUpdate(id, {
-            title,
-            instructions,
-            level,
-            ingredients,
-            image,
-            duration,
-            isArchived,
-            created,
-        }, { new: true }
+        const updatedRecipe = await RecipeModel.findByIdAndUpdate(
+            req.params.recipeId, 
+            req.body,
+            { new: true}
         );
-        return res.status(200).json({ msg: "Recipe successfully updated", uptaded });
+        res.status(200).json(updatedRecipe);
     } catch (error) {
         console.log(error);
         return res.status(500).json({ msg: "Failed to update the recipe" });
@@ -106,11 +88,11 @@ app.put("/recipes/:id", async (req, res) => {
 
 //  Iteration 7 - Delete a Single Recipe
 //  DELETE  /recipes/:id route
-app.delete("/recipes/:id", async (req, res) => {
+app.delete("/recipes/:recipeId", async (req, res) => {
+    const theRecipeId = req.params.recipeId
     try {
-        const { id } = req.params;
-        const deleted = await Recipe.findByIdAndDelete(id)
-        return res.status(204).json({ msg: "Recipe successfully deleted"}); 
+        const deletedRecipe = await RecipeModel.findByIdAndDelete(theRecipeId)
+        return res.status(204).json({ msg: "Recipe successfully deleted", deletedRecipe}); 
     } catch (error) {
         console.log(error);
         return res.status(500).json({ msg: "Failed to delete the recipe"});
